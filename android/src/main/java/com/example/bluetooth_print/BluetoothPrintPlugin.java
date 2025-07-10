@@ -28,7 +28,6 @@ import io.flutter.plugin.common.EventChannel.EventSink;
 import io.flutter.plugin.common.EventChannel.StreamHandler;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
-import io.flutter.plugin.common.PluginRegistry.Registrar;
 import io.flutter.plugin.common.PluginRegistry.RequestPermissionsResultListener;
 
 import java.util.ArrayList;
@@ -70,20 +69,8 @@ public class BluetoothPrintPlugin implements FlutterPlugin, ActivityAware, Metho
           Manifest.permission.ACCESS_FINE_LOCATION
   };
 
-  public static void registerWith(Registrar registrar) {
-    final BluetoothPrintPlugin instance = new BluetoothPrintPlugin();
-
-    Activity activity = registrar.activity();
-    Application application = null;
-    if (registrar.context() != null) {
-      application = (Application) (registrar.context().getApplicationContext());
-    }
-    instance.setup(registrar.messenger(), application, activity, registrar, null);
-  }
-
   public BluetoothPrintPlugin(){
   }
-
 
   @Override
   public void onAttachedToEngine(FlutterPluginBinding binding) {
@@ -102,7 +89,6 @@ public class BluetoothPrintPlugin implements FlutterPlugin, ActivityAware, Metho
             pluginBinding.getBinaryMessenger(),
             (Application) pluginBinding.getApplicationContext(),
             activityBinding.getActivity(),
-            null,
             activityBinding);
   }
 
@@ -125,7 +111,6 @@ public class BluetoothPrintPlugin implements FlutterPlugin, ActivityAware, Metho
           final BinaryMessenger messenger,
           final Application application,
           final Activity activity,
-          final PluginRegistry.Registrar registrar,
           final ActivityPluginBinding activityBinding) {
     synchronized (initializationLock) {
       Log.i(TAG, "setup");
@@ -138,25 +123,26 @@ public class BluetoothPrintPlugin implements FlutterPlugin, ActivityAware, Metho
       stateChannel.setStreamHandler(stateHandler);
       mBluetoothManager = (BluetoothManager) application.getSystemService(Context.BLUETOOTH_SERVICE);
       mBluetoothAdapter = mBluetoothManager.getAdapter();
-      if (registrar != null) {
-        // V1 embedding setup for activity listeners.
-        registrar.addRequestPermissionsResultListener(this);
-      } else {
-        // V2 embedding setup for activity listeners.
-        activityBinding.addRequestPermissionsResultListener(this);
-      }
+      // V2 embedding setup for activity listeners.
+      activityBinding.addRequestPermissionsResultListener(this);
     }
   }
 
   private void tearDown() {
     Log.i(TAG, "teardown");
     context = null;
-    activityBinding.removeRequestPermissionsResultListener(this);
-    activityBinding = null;
-    channel.setMethodCallHandler(null);
-    channel = null;
-    stateChannel.setStreamHandler(null);
-    stateChannel = null;
+    if (activityBinding != null) {
+      activityBinding.removeRequestPermissionsResultListener(this);
+      activityBinding = null;
+    }
+    if (channel != null) {
+      channel.setMethodCallHandler(null);
+      channel = null;
+    }
+    if (stateChannel != null) {
+      stateChannel.setStreamHandler(null);
+      stateChannel = null;
+    }
     mBluetoothAdapter = null;
     mBluetoothManager = null;
     application = null;
