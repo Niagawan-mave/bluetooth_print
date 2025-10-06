@@ -205,14 +205,18 @@
             NSData *decodeData = [[NSData alloc] initWithBase64EncodedString:content options:0];
             UIImage *image = [UIImage imageWithData:decodeData];
             
-            CGSize imageSize = image.size;
-            UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:imageSize];
-            NSData *cleanImageData = [renderer PNGDataWithActions:^(UIGraphicsImageRendererContext * _Nonnull context) {
-                [image drawInRect:CGRectMake(0, 0, imageSize.width, imageSize.height)];
-            }];
-            UIImage *cleanImage = [UIImage imageWithData:cleanImageData];
+            CGFloat maxWidth = [width floatValue] / 2;
+            CGSize originalSize = image.size;
+            CGFloat scaleFactor = maxWidth / originalSize.width;
+            CGSize scaledSize = CGSizeMake(originalSize.width * scaleFactor, originalSize.height * scaleFactor);
             
-            [command addBitmapwithX:[x intValue] withY:[y intValue] withMode:0 withWidth:300 withImage:cleanImage];
+            // 使用PNG格式而不是JPEG，避免压缩伪影
+            UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:scaledSize];
+            NSData *renderedImageData = [renderer PNGDataWithActions:^(UIGraphicsImageRendererContext * _Nonnull context) {
+                [image drawInRect:CGRectMake(0, 0, scaledSize.width, scaledSize.height)];
+            }];
+            UIImage *resizedImage = [UIImage imageWithData:renderedImageData];
+            [command addOriginrastBitImage:resizedImage];
         }
        
     }
