@@ -268,30 +268,15 @@
         }else if([@"image" isEqualToString:type]){
             NSData *decodeData = [[NSData alloc] initWithBase64EncodedString:content options:0];
             UIImage *image = [UIImage imageWithData:decodeData];
-
+            
             CGFloat maxWidth = [width floatValue] / 2;
-
             CGSize originalSize = image.size;
             CGFloat scaleFactor = maxWidth / originalSize.width;
             CGSize scaledSize = CGSizeMake(originalSize.width * scaleFactor, originalSize.height * scaleFactor);
-
-            if (originalSize.height > originalSize.width) {
-                CGFloat yOffset = (originalSize.height - originalSize.width) / 2.0;
-                CGRect cropRect = CGRectMake(0, yOffset, originalSize.width, originalSize.width);
-                CGImageRef croppedImageRef = CGImageCreateWithImageInRect([image CGImage], cropRect);
-                UIImage *croppedImage = [UIImage imageWithCGImage:croppedImageRef];
-                CGSize croppedSize = croppedImage.size;
-                CGImageRelease(croppedImageRef);
-                image = croppedImage;
-
-                scaledSize = CGSizeMake(croppedSize.width * scaleFactor, croppedSize.height * scaleFactor);
-            }
-
-            // Create a renderer with the calculated target size
+            
+            // 使用PNG格式而不是JPEG，避免压缩伪影
             UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:scaledSize];
-
-            // Render the image and get a new data representation
-            NSData *renderedImageData = [renderer JPEGDataWithCompressionQuality:1 actions:^(UIGraphicsImageRendererContext * _Nonnull context) {
+            NSData *renderedImageData = [renderer PNGDataWithActions:^(UIGraphicsImageRendererContext * _Nonnull context) {
                 [image drawInRect:CGRectMake(0, 0, scaledSize.width, scaledSize.height)];
             }];
             UIImage *resizedImage = [UIImage imageWithData:renderedImageData];
