@@ -204,7 +204,15 @@
         }else if([@"image" isEqualToString:type]){
             NSData *decodeData = [[NSData alloc] initWithBase64EncodedString:content options:0];
             UIImage *image = [UIImage imageWithData:decodeData];
-            [command addBitmapwithX:[x intValue] withY:[y intValue] withMode:0 withWidth:300 withImage:image];
+            
+            CGSize imageSize = image.size;
+            UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:imageSize];
+            NSData *cleanImageData = [renderer PNGDataWithActions:^(UIGraphicsImageRendererContext * _Nonnull context) {
+                [image drawInRect:CGRectMake(0, 0, imageSize.width, imageSize.height)];
+            }];
+            UIImage *cleanImage = [UIImage imageWithData:cleanImageData];
+            
+            [command addBitmapwithX:[x intValue] withY:[y intValue] withMode:0 withWidth:300 withImage:cleanImage];
         }
        
     }
