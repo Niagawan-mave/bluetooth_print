@@ -204,15 +204,29 @@
         }else if([@"image" isEqualToString:type]){
             NSData *decodeData = [[NSData alloc] initWithBase64EncodedString:content options:0];
             UIImage *image = [UIImage imageWithData:decodeData];
-          
-            CGSize imageSize = image.size;
-            UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:imageSize];
-            NSData *cleanImageData = [renderer PNGDataWithActions:^(UIGraphicsImageRendererContext * _Nonnull context) {
-                [image drawInRect:CGRectMake(0, 0, imageSize.width, imageSize.height)];
-            }];
-            UIImage *cleanImage = [UIImage imageWithData:cleanImageData];
             
-            [command addBitmapwithX:[x intValue] withY:[y intValue] withMode:0 withWidth:300 withImage:cleanImage];
+            // 强制缩小图片以减少传输数据量
+            CGSize originalSize = image.size;
+            CGFloat maxSize = 150; // 限制最大尺寸
+            CGFloat scale = MIN(maxSize / originalSize.width, maxSize / originalSize.height);
+            CGSize newSize = CGSizeMake(originalSize.width * scale, originalSize.height * scale);
+            
+            // 确保尺寸是8的倍数（热敏打印机要求）
+            newSize.width = ((int)(newSize.width / 8)) * 8;
+            newSize.height = ((int)(newSize.height / 8)) * 8;
+            
+            UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:newSize];
+            NSData *optimizedImageData = [renderer PNGDataWithActions:^(UIGraphicsImageRendererContext * _Nonnull context) {
+                [image drawInRect:CGRectMake(0, 0, newSize.width, newSize.height)];
+            }];
+            UIImage *optimizedImage = [UIImage imageWithData:optimizedImageData];
+            
+            NSLog(@"图片优化: 原始尺寸=%@, 优化后尺寸=%@, 数据大小=%lu字节", 
+                  NSStringFromCGSize(originalSize), 
+                  NSStringFromCGSize(newSize), 
+                  (unsigned long)optimizedImageData.length);
+            
+            [command addBitmapwithX:[x intValue] withY:[y intValue] withMode:0 withWidth:300 withImage:optimizedImage];
         }
        
     }
@@ -277,10 +291,15 @@
             NSData *decodeData = [[NSData alloc] initWithBase64EncodedString:content options:0];
             UIImage *image = [UIImage imageWithData:decodeData];
             
-            CGFloat maxWidth = [width floatValue] / 2;
+            // 强制限制图片大小以减少传输数据量
             CGSize originalSize = image.size;
+            CGFloat maxWidth = MIN([width floatValue] / 2, 150); // 限制最大宽度
             CGFloat scaleFactor = maxWidth / originalSize.width;
             CGSize scaledSize = CGSizeMake(originalSize.width * scaleFactor, originalSize.height * scaleFactor);
+            
+            // 确保尺寸是8的倍数（热敏打印机要求）
+            scaledSize.width = ((int)(scaledSize.width / 8)) * 8;
+            scaledSize.height = ((int)(scaledSize.height / 8)) * 8;
 
             // if (originalSize.height > originalSize.width) {
             //   CGFloat yOffset = (originalSize.height - originalSize.width) / 2.0;
@@ -293,12 +312,18 @@
             //   scaledSize = CGSizeMake(croppedSize.width * scaleFactor, croppedSize.height * scaleFactor);
             // }
             
-            // 使用PNG格式而不是JPEG，避免压缩伪影
+            // 使用PNG格式，并添加传输优化
             UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:scaledSize];
             NSData *renderedImageData = [renderer PNGDataWithActions:^(UIGraphicsImageRendererContext * _Nonnull context) {
                 [image drawInRect:CGRectMake(0, 0, scaledSize.width, scaledSize.height)];
             }];
             UIImage *resizedImage = [UIImage imageWithData:renderedImageData];
+            
+            NSLog(@"ESC图片优化: 原始尺寸=%@, 优化后尺寸=%@, 数据大小=%lu字节", 
+                  NSStringFromCGSize(originalSize), 
+                  NSStringFromCGSize(scaledSize), 
+                  (unsigned long)renderedImageData.length);
+            
             [command addOriginrastBitImage:resizedImage];
         }
         
