@@ -269,7 +269,7 @@
             UIImage *image = [UIImage imageWithData:decodeData];
 
             // 增加图片尺寸，让打印效果更大
-            CGFloat maxWidth = [width floatValue] / 2;  // 使用80%的宽度，而不是50%
+            CGFloat maxWidth = [width floatValue] * 0.55; 
 
             CGSize originalSize = image.size;
             CGFloat scaleFactor = maxWidth / originalSize.width;
