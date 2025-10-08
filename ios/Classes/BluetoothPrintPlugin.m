@@ -273,6 +273,9 @@
             CGFloat scaleFactor = maxWidth / originalSize.width;
             CGSize scaledSize = CGSizeMake(originalSize.width * scaleFactor, originalSize.height * scaleFactor);         
 
+            scaledSize.width = ((int)(scaledSize.width / 8)) * 8;
+            scaledSize.height = ((int)(scaledSize.height / 8)) * 8;
+
             UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:scaledSize];
             NSData *renderedImageData = [renderer PNGDataWithActions:^(UIGraphicsImageRendererContext * _Nonnull context) {
                 [image drawInRect:CGRectMake(0, 0, scaledSize.width, scaledSize.height)];
