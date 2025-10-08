@@ -268,11 +268,16 @@
             NSData *decodeData = [[NSData alloc] initWithBase64EncodedString:content options:0];
             UIImage *image = [UIImage imageWithData:decodeData];
 
-            CGFloat maxWidth = [width floatValue] / 2;
+            // 增加图片尺寸，让打印效果更大
+            CGFloat maxWidth = [width floatValue] * 0.8;  // 使用80%的宽度，而不是50%
 
             CGSize originalSize = image.size;
             CGFloat scaleFactor = maxWidth / originalSize.width;
             CGSize scaledSize = CGSizeMake(originalSize.width * scaleFactor, originalSize.height * scaleFactor);
+            
+            // 确保尺寸是8的倍数（热敏打印机要求）
+            scaledSize.width = ((int)(scaledSize.width / 8)) * 8;
+            scaledSize.height = ((int)(scaledSize.height / 8)) * 8;
 
             // 使用PNG格式而不是JPEG，避免压缩伪影
             UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:scaledSize];
