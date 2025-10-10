@@ -270,7 +270,7 @@
 
             CGFloat maxWidth = [width floatValue] / 2; 
             CGSize originalSize = image.size;
-            CGFloat scaleFactor = maxWidth / originalSize.width;
+            CGFloat scaleFactor = MIN(1.0, maxWidth / originalSize.width);
             CGSize scaledSize = CGSizeMake(originalSize.width * scaleFactor, originalSize.height * scaleFactor);         
 
             scaledSize.width = ((int)(scaledSize.width / 8)) * 8;
