@@ -268,7 +268,7 @@
             NSData *decodeData = [[NSData alloc] initWithBase64EncodedString:content options:0];
             UIImage *image = [UIImage imageWithData:decodeData];
             
-            const int maxWidth = 150;
+            const int maxWidth = 200;
             const int maxBytes = 26880; // 26.25 KB
             
             NSLog(@"Original image size: %.0fx%.0f, %lu bytes", image.size.width, image.size.height, (unsigned long)decodeData.length);
