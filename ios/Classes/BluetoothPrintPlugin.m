@@ -267,25 +267,61 @@
         }else if([@"image" isEqualToString:type]){
             NSData *decodeData = [[NSData alloc] initWithBase64EncodedString:content options:0];
             UIImage *image = [UIImage imageWithData:decodeData];
-
-            CGFloat maxWidth = [width floatValue]; 
-            CGSize originalSize = image.size;
-            CGFloat scaleFactor = MIN(1.0, maxWidth / originalSize.width);
-            CGSize scaledSize = CGSizeMake(originalSize.width * scaleFactor, originalSize.height * scaleFactor);         
-
-            UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:scaledSize];
-            NSData *renderedImageData = [renderer PNGDataWithActions:^(UIGraphicsImageRendererContext * _Nonnull context) {
+            
+            const int maxWidth = 100;
+            const int maxBytes = 26880; // 26.25 KB
+            
+            NSLog(@"Original image size: %.0fx%.0f, %lu bytes", image.size.width, image.size.height, (unsigned long)decodeData.length);
+            
+            // If original image is within size constraints, use it directly
+            if (decodeData.length <= maxBytes) {
+                [command addOriginrastBitImage:image];
+                NSLog(@"✅ Used original image: %.0fx%.0f, %lu bytes", image.size.width, image.size.height, (unsigned long)decodeData.length);
+                continue;
+            }
+            
+            // Resize image to max width using explicit scale to ensure consistency across iOS versions
+            CGFloat scaleFactor = MIN(1.0, (CGFloat)maxWidth / image.size.width);
+            CGSize scaledSize = CGSizeMake(image.size.width * scaleFactor, image.size.height * scaleFactor);
+            
+            // Use UIGraphicsImageRendererFormat with explicit scale to ensure consistency
+            UIGraphicsImageRendererFormat *format = [[UIGraphicsImageRendererFormat alloc] init];
+            format.scale = 1.0; // Force scale to 1.0 to prevent iOS version differences
+            format.opaque = NO;
+            
+            UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:scaledSize format:format];
+            UIImage *resizedImage = [renderer imageWithActions:^(UIGraphicsImageRendererContext * _Nonnull context) {
                 [image drawInRect:CGRectMake(0, 0, scaledSize.width, scaledSize.height)];
             }];
-            UIImage *resizedImage = [UIImage imageWithData:renderedImageData];
             
-            [command addOriginrastBitImage:resizedImage];
+            // Start with high quality and progressively reduce
+            CGFloat quality = 0.9;
+            NSData *processedData = UIImageJPEGRepresentation(resizedImage, quality);
+            
+            // Progressive quality reduction and height adjustment
+            while (processedData.length > maxBytes && quality > 0.3) {
+                quality -= 0.1;
+                processedData = UIImageJPEGRepresentation(resizedImage, quality);
+                
+                // If still too large and height > 100, reduce height by 10%
+                if (processedData.length > maxBytes && resizedImage.size.height > 100) {
+                    CGSize newSize = CGSizeMake(maxWidth, resizedImage.size.height * 0.9);
+                    UIGraphicsImageRenderer *heightRenderer = [[UIGraphicsImageRenderer alloc] initWithSize:newSize format:format];
+                    resizedImage = [heightRenderer imageWithActions:^(UIGraphicsImageRendererContext * _Nonnull context) {
+                        [resizedImage drawInRect:CGRectMake(0, 0, newSize.width, newSize.height)];
+                    }];
+                }
+            }
+            
+            UIImage *finalImage = [UIImage imageWithData:processedData];
+            [command addOriginrastBitImage:finalImage];
+            
+            NSLog(@"✅ Final image: %.0fx%.0f, %lu bytes, quality=%.1f", finalImage.size.width, finalImage.size.height, (unsigned long)processedData.length, quality);
         }
         
         if([linefeed isEqualToNumber:@1]){
             [command addPrintAndLineFeed];
         }
-       
     }
     
     [command addPrintAndFeedLines:4];
