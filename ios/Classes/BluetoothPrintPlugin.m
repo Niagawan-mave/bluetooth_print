@@ -272,16 +272,15 @@
             const int maxBytes = 26880; // 26.25 KB
             
             NSLog(@"Original image size: %.0fx%.0f, %lu bytes", image.size.width, image.size.height, (unsigned long)decodeData.length);
-            
-            // // If original image is within size constraints, use it directly
-            // if (decodeData.length <= maxBytes) {
-            //     [command addOriginrastBitImage:image];
-            //     NSLog(@"✅ Used original image: %.0fx%.0f, %lu bytes", image.size.width, image.size.height, (unsigned long)decodeData.length);
-            //     continue;
-            // }
-            
+          
             // Resize image to max width using explicit scale to ensure consistency across iOS versions
-            CGFloat scaleFactor = MIN(1.0, (CGFloat)maxWidth / image.size.width);
+            // If original image width is smaller than 200, increase it to 200px
+            CGFloat scaleFactor;
+            if (image.size.width < maxWidth) {
+                scaleFactor = (CGFloat)maxWidth / image.size.width;
+            } else {
+                scaleFactor = MIN(1.0, (CGFloat)maxWidth / image.size.width);
+            }
             CGSize scaledSize = CGSizeMake(image.size.width * scaleFactor, image.size.height * scaleFactor);
             
             // Use UIGraphicsImageRendererFormat with explicit scale to ensure consistency
