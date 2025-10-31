@@ -4,32 +4,38 @@ version '1.0'
 buildscript {
     repositories {
         google()
-        jcenter()
+        mavenCentral()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.1.2'
+        classpath 'com.android.tools.build:gradle:7.0.4'
     }
 }
 
 rootProject.allprojects {
     repositories {
         google()
-        jcenter()
+        mavenCentral()
     }
 }
 
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 31
+    compileSdkVersion 33
 
     // Specify the namespace here
     namespace 'com.example.bluetooth_print' // Add this line
 
     defaultConfig {
         minSdkVersion 21
+        targetSdkVersion 33
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+    
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
     
     lintOptions {
@@ -39,6 +45,6 @@ android {
 
 dependencies {
     implementation files('libs/gprintersdkv2.jar')
-    implementation "androidx.core:core:1.6.0"
+    implementation "androidx.core:core:1.9.0"
     // implementation files("D:\\devtools\\flutter\\bin\\cache\\artifacts\\engine\\android-x64\\flutter.jar")
 }
