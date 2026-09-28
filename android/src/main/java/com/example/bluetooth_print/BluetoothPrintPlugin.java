@@ -456,16 +456,31 @@ public class BluetoothPrintPlugin implements FlutterPlugin, ActivityAware, Metho
   @Override
   public boolean onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
 
-    if (requestCode == REQUEST_FINE_LOCATION_PERMISSIONS) {
-      if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-        startScan(pendingCall, pendingResult);
-      } else {
-        pendingResult.error("no_permissions", "this plugin requires location permissions for scanning", null);
-        pendingResult = null;
-      }
+    if (requestCode != REQUEST_FINE_LOCATION_PERMISSIONS) {
+      return false;
+    }
+
+    // Take the pending call exactly once, so a second delivery cannot reply twice.
+    MethodCall call = pendingCall;
+    Result result = pendingResult;
+    pendingCall = null;
+    pendingResult = null;
+
+    // The dialog outlived the call that opened it (activity recreated, or a
+    // repeat delivery): there is nobody to answer. Replying to null crashed
+    // with a NullPointerException in startScan.
+    if (result == null) {
       return true;
     }
-    return false;
+
+    // An interrupted request delivers EMPTY arrays; grantResults[0] crashed
+    // with ArrayIndexOutOfBoundsException.
+    if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+      startScan(call, result);
+    } else {
+      result.error("no_permissions", "this plugin requires location permissions for scanning", null);
+    }
+    return true;
 
   }
 
